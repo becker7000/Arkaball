@@ -14,12 +14,24 @@ using namespace std;
 #define ancho 1024
 #define alto 740
 
+// Definiciones de funetes:
+
+
 // Prototipos de las funciones.
 int inicializo();
 void inicializo_pantalla();
 void inicializo_sonidos();
 void armo_pantalla();
 void jugar();
+
+void inicializo_nivel();
+void chequeo_base(); // Checa la base
+void muestro_ladrillos();
+void muevo_bola();
+void chequeo_teclas_sonido();
+void retoma_juego();
+
+void configura_nivel();
 
 // Objetos de Allegro necesarios para el juego:
 
@@ -87,7 +99,24 @@ int baseX=255; // Coordenadas de la base, sólo X porque va a ser fija en Y.
 int bolaX=295;
 int bolaY=650;
 
-int mapa[63];
+int pant1[63]={1,1,1,1,1,1,1,1,1,
+               2,2,2,2,2,2,2,2,2,
+               3,3,3,3,3,3,3,3,3,
+               4,4,4,4,4,4,4,4,4,
+               5,5,5,5,5,5,5,5,5,
+               6,6,6,6,6,6,6,6,6,
+               7,7,7,7,7,7,7,7,7};
+
+int pant2[63]={1,2,3,4,5,6,7,6,5,
+               1,2,3,4,5,6,7,6,5,
+               1,2,3,4,5,6,7,6,5,
+               1,2,3,4,5,6,7,6,5,
+               1,2,3,4,5,6,7,6,5,
+               1,2,3,4,5,6,7,6,5,
+               1,2,3,4,5,6,7,6,5,};
+
+// Arreglo auxiliar para modificarlos según el nivel:
+int mapa[63]; // Mapa de ladrillos
 
 // Es para delimitar nuestra área de movimiento.
 int puntaIzq;
@@ -99,6 +128,12 @@ int elemento; // Pendiente
 
 // Arreglo que guarda los pixeles de los ladrillos.
 int fila[]={20,50,80,110,140,170,200};
+
+// Declarando las fuentes:
+DATAFILE *datfile;
+FONT *arialBD;
+FONT *arial20;
+FONT *orc_a_ex18;
 
 int main(){
 
@@ -132,6 +167,11 @@ int inicializo(){
         allegro_message("\n\t Error al iniciar el sonido ",allegro_error);
         return 1;
     }
+    datfile=load_datafile("fontsdat.dat");
+    orc_a_ex18=(FONT*)datfile[2].dat;
+    arialBD=(FONT*)datfile[1].dat; // Traemos los elementos desde el primero
+    arial20=(FONT*)datfile[0].dat;
+
     inicializo_pantalla();
     inicializo_sonidos();
     return 0;
@@ -184,7 +224,17 @@ void inicializo_sonidos(){
 void armo_pantalla(){
     clear_to_color(buffer,0x000000);
     draw_sprite(buffer,logo,610,5);
-    draw_sprite(buffer,panel,620,140);
+    draw_sprite(buffer,panel,620,140); // Ya que está creado el panel le agregamos la fuentes.
+
+    textprintf_ex(panel,arialBD,130,3,makecol(0,0,0),makecol(0,0,0),"              ");  // Ahora agregamos texto encima del panel. Coordenadas relativas al panel.
+    textprintf_ex(panel,arialBD,130,3,makecol(255,0,0),makecol(0,0,0),"%d",level);
+
+    textprintf_ex(panel,arialBD,160,65,makecol(0,0,0),makecol(0,0,0),"              ");  // Ahora agregamos texto encima del panel. Coordenadas relativas al panel.
+    textprintf_ex(panel,arialBD,160,65,makecol(255,0,0),makecol(0,0,0),"%d",score);
+
+    textprintf_ex(panel,arialBD,130,130,makecol(0,0,0),makecol(0,0,0),"              ");  // Ahora agregamos texto encima del panel. Coordenadas relativas al panel.
+    textprintf_ex(panel,arialBD,130,130,makecol(255,0,0),makecol(0,0,0),"%d",vidas);
+
     draw_sprite(buffer,recuadro,5,10);
     draw_sprite(buffer,fondo1,11,16); // Arriba del fondo va la base por eso va después:
     draw_sprite(buffer,base,baseX,660);
@@ -194,7 +244,118 @@ void armo_pantalla(){
 }
 
 void jugar(){
-    // TODO: programar como jugar...
+
+    level=1;
+    fin=false;
+
+    while(!key[KEY_ESC] && !fin){
+
+        inicializo_nivel(); // Se inicia un nuevo nivel.
+
+        // Se revisa si hay un nuevo nivel, si se no se ha presionado ESC y que las vidas sean mayores que 0.
+        while(!nuevoNivel && !key[KEY_ESC] && vidas>0){
+
+            if(key[KEY_SPACE] && enJuego==false){
+
+                // Aquí se va a detener la musica inicial.
+                enJuego=true;
+
+            }
+
+            chequeo_base(); // Checa el movimiento
+
+            if(enJuego){
+                muestro_ladrillos();
+                muevo_bola();
+            }
+
+            chequeo_teclas_sonido();
+            armo_pantalla();
+
+            if(vidas==0){ // El juego termina cuando las vidas son cero.
+                fin=true;
+            }
+
+        }
+
+    }
+
+}
+
+
+void inicializo_nivel(){
+    configura_nivel();
+    retoma_juego();
+    if(efectos){
+        play_sample(sonido_InicioNivel,200,150,1000,0);
+    }
+}
+
+void chequeo_base(){
+
+}
+
+void muestro_ladrillos(){
+    int x,y,col;
+    int ladrillo_n=0;
+    int lad;
+    int fila[7]={20,50,80,110,140,170,200};
+    for(int i=0;i<63;i++){
+
+    }
+}
+
+void muevo_bola(){
+
+}
+
+void chequeo_teclas_sonido(){
+
+    // Si se oprime la tecla DEL se pausa la musica o se reproduce...
+    if(key[KEY_DEL]){
+        if(musica){
+            musica=false;
+            midi_pause();
+        }else{
+            midi_resume();
+        }
+    }
+
+    // _Los efectos de habilitan o se deshabilitan
+    if(key[KEY_TAB]){
+        if(efectos){
+            efectos=false;
+        }else{
+            efectos=true;
+        }
+    }
+
+}
+
+void retoma_juego(){
+    baseX=255;
+    bolaX=285;
+    bolaY=650;
+    enJuego=false;
+    nuevoNivel=false;
+    armo_pantalla();
+}
+
+void configura_nivel(){
+
+    // Se configura el arreglo mapa que es el que va a tener los identificadores de ladrillos.
+    for(int i=0;i<63;i++){
+        if(level==1){
+            mapa[i]=pant1[i];
+        }
+        if(level==2){
+            mapa[i]=pant2[i];
+        }
+        if(level>2){
+            mapa[i]=rand()%9; // Aleatorios de 0 a 8
+        }
+    }
+
 }
 
 
